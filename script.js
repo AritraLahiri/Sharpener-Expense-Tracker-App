@@ -64,10 +64,17 @@ function addItems(e) {
     expenseDesc,
   };
 
-  localStorage.setItem(
-    expenseAmount + "$" + expenseDesc,
-    JSON.stringify(userObj)
-  );
+  axios
+    .post("http://localhost:3000/add-expense", userObj)
+    .then((response) => {
+      console.log(response);
+    })
+    .catch((err) => console.log(err));
+
+  // localStorage.setItem(
+  //   expenseAmount + "$" + expenseDesc,
+  //   JSON.stringify(userObj)
+  // );
 }
 
 function allStorage() {
@@ -82,55 +89,63 @@ function allStorage() {
 }
 
 function fetchDataFromStorage() {
-  const allExpenses = allStorage();
+  //const allExpenses = allStorage();
+  axios.get("http://localhost:3000/expense").then((response) => {
+    console.log(response.data);
+    for (const exp of response.data) {
+      let newItem = exp.Amount;
+      let newItemDesc = exp.Description;
+      let newItemCategory = exp.Category;
 
-  for (const exp of allExpenses) {
-    let newItem = exp.expenseAmount;
-    let newItemDesc = exp.expenseDesc;
-    let newItemCategory = exp.expenseCategory;
+      // Create new li element
+      let li = document.createElement("li");
+      // Add class
+      li.className = "list-group-item";
+      // Add text node with input value
+      li.appendChild(document.createTextNode(newItem));
+      li.appendChild(document.createTextNode(" " + newItemDesc));
+      li.appendChild(document.createTextNode(" " + newItemCategory));
 
-    // Create new li element
-    let li = document.createElement("li");
-    // Add class
-    li.className = "list-group-item";
-    // Add text node with input value
-    li.appendChild(document.createTextNode(newItem));
-    li.appendChild(document.createTextNode(" " + newItemDesc));
-    li.appendChild(document.createTextNode(" " + newItemCategory));
+      // Create del button element
+      var deleteBtn = document.createElement("button");
+      var editBtn = document.createElement("button");
 
-    // Create del button element
-    var deleteBtn = document.createElement("button");
-    var editBtn = document.createElement("button");
+      // Add classes to del button
+      deleteBtn.className = "btn btn-danger btn-sm";
+      editBtn.className = "btn btn-primary btn-sm";
 
-    // Add classes to del button
-    deleteBtn.className = "btn btn-danger btn-sm";
-    editBtn.className = "btn btn-primary btn-sm";
+      // Append text node
+      deleteBtn.appendChild(document.createTextNode("Delete"));
+      editBtn.appendChild(document.createTextNode("Edit"));
 
-    // Append text node
-    deleteBtn.appendChild(document.createTextNode("Delete"));
-    editBtn.appendChild(document.createTextNode("Edit"));
-
-    //Edit button clicked
-    editBtn.addEventListener("click", function () {
-      document.getElementById("expenseAmount").value = exp.expenseAmount;
-      document.getElementById("expenseDesc").value = exp.expenseDesc;
-      document.getElementById("expenseSelect").value = exp.expenseCategory;
-      localStorage.removeItem(exp.expenseAmount + "$" + exp.expenseDesc);
-      itemList.removeChild(this.parentElement);
-    });
-    //When delete btn is clicked
-    deleteBtn.addEventListener("click", function () {
-      if (confirm("Do you want to delete expense?")) {
+      //Edit button clicked
+      editBtn.addEventListener("click", function () {
+        document.getElementById("expenseAmount").value = exp.expenseAmount;
+        document.getElementById("expenseDesc").value = exp.expenseDesc;
+        document.getElementById("expenseSelect").value = exp.expenseCategory;
         localStorage.removeItem(exp.expenseAmount + "$" + exp.expenseDesc);
         itemList.removeChild(this.parentElement);
-      }
-    });
+      });
+      //When delete btn is clicked
+      deleteBtn.addEventListener("click", function () {
+        if (confirm("Do you want to delete expense?")) {
+          axios
+            .delete(`http://localhost:3000/delete/${exp.id}`)
+            .then((response) => {
+              console.log(response);
+              //localStorage.removeItem(exp.expenseAmount + "$" + exp.expenseDesc);
+              itemList.removeChild(this.parentElement);
+            })
+            .catch((err) => console.log(err));
+        }
+      });
 
-    // Append button to li
-    li.appendChild(deleteBtn);
-    li.appendChild(editBtn);
+      // Append button to li
+      li.appendChild(deleteBtn);
+      li.appendChild(editBtn);
 
-    // Append li to list
-    itemList.appendChild(li);
-  }
+      // Append li to list
+      itemList.appendChild(li);
+    }
+  });
 }
